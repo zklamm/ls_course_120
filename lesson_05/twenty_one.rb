@@ -28,18 +28,22 @@ end
 
 class Player < Participant
   def choice
-    @answer = ''
+    answer = ''
     puts "Hit or stay? Enter 'h' or 's'"
     loop do
-      @answer = gets.chomp.downcase
-      break if %w[h s].include?(@answer)
+      answer = gets.chomp.downcase
+      break if %w[h s].include?(answer)
       puts "Please enter 'h' or 's'"
     end
-    @answer
+    answer
   end
 
   def stay?
-    @answer == 's'
+    choice == 's'
+  end
+
+  def hit?
+    choice == 'h'
   end
 end
 
@@ -150,19 +154,21 @@ class Game
   end
 
   def player_turn
-    player.hand << deck.deal if player.choice == 'h'
+    player.hand << deck.deal if player.hit?
     clear_screen
     display_initial_hands
-    puts "Busted! Too bad!" if player.busted?
+    puts "Busted! Too bad! Dealer wins!" if player.busted?
   end
 
   def player_sequence
-    player_turn until player.busted? || player.stay?
+    loop do
+      player_turn
+      break if player.busted? || player.stay?
+    end
   end
 
   def dealer_turn
     dealer.hand << deck.deal if dealer.total < 17
-    display_initial_hands
   end
 
   def dealer_win?
@@ -174,7 +180,7 @@ class Game
     dealer_turn until dealer.busted? || dealer_win?
   end
 
-  def choose_winner
+  def determine_winner
     case player.total <=> dealer.total
     when 1  then puts "You win!"
     when -1 then puts "Dealer wins!"
@@ -190,13 +196,23 @@ class Game
     puts ""
   end
 
+  def display_dealer_action
+    num_of_hits = dealer.hand.size - 2
+    case num_of_hits
+    when 0 then puts "The dealer stays."
+    when 1 then puts "The dealer hit 1 time."
+    else        puts "The dealer hit #{num_of_hits} times."
+    end
+  end
+
   def display_result
     clear_screen
     display_final_hands
+    display_dealer_action
     if dealer.busted?
-      puts "Dealer busted!"
+      puts "Dealer busted! You win!"
     else
-      choose_winner
+      determine_winner
     end
   end
 

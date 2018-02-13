@@ -2,7 +2,7 @@ class Board
   INITIAL_MARKER = ' '
   def initialize
     @squares = {}
-    (1..9).each { |key| @squares[key] = INITIAL_MARKER }
+    (1..9).each { |key| @squares[key] = Square.new(INITIAL_MARKER) }
   end
 
   def get_square_at(key)
@@ -20,6 +20,10 @@ class Square
   def initialize(marker)
     @marker = marker
   end
+
+  def to_s
+    "#{marker}"
+  end
 end
 
 class Player
@@ -31,12 +35,15 @@ class Player
 end
 
 class TTTGame
+  HUMAN_MARKER = 'X'
+  COMPUTER_MARKER = 'O'
+
   attr_reader :board, :human, :computer
 
   def initialize
     @board = Board.new
-    @human = Player.new('X')
-    @computer = Player.new('O')
+    @human = Player.new(HUMAN_MARKER)
+    @computer = Player.new(COMPUTER_MARKER)
   end
 
   def display_welcome_message
@@ -76,15 +83,21 @@ class TTTGame
     board.set_square_at(square, human.marker)
   end
 
+  def computer_moves
+    board.set_square_at((1..9).to_a.sample, computer.marker)
+  end
+
   def play
     display_welcome_message
     loop do
       display_board
       human_moves
-      break if someone_won? || board_full?
-
+      # break if someone_won? || board_full?
+      display_board
       computer_moves
-      break if someone_won? || board_full?
+      display_board
+      # break if someone_won? || board_full?
+      break
     end
     # display_result
     display_goodbye_message
