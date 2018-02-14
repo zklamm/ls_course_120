@@ -1,8 +1,11 @@
+require 'pry'
+
 class Participant
-  attr_accessor :hand
+  attr_accessor :hand, :score
 
   def initialize
     @hand = []
+    @score = 0
   end
 
   def num_of_aces
@@ -24,10 +27,21 @@ class Participant
   def busted?
     total > 21
   end
+
+  def increase_score
+    self.score += 1
+  end
 end
 
 class Player < Participant
-  def choice
+  attr_accessor :choice
+
+  def initialize
+    @choice = ''
+    super
+  end
+
+  def choose_hit_or_stay
     answer = ''
     puts "Hit or stay? Enter 'h' or 's'"
     loop do
@@ -35,7 +49,7 @@ class Player < Participant
       break if %w[h s].include?(answer)
       puts "Please enter 'h' or 's'"
     end
-    answer
+    self.choice = answer
   end
 
   def stay?
@@ -57,17 +71,17 @@ class Deck
     'Q' => 10, 'K' => 10, 'A' => 11
   }
 
-  attr_reader :deck
+  attr_reader :cards
 
   def initialize
-    @deck = FULL_DECK.map do |rank, suit|
+    @cards = FULL_DECK.map do |rank, suit|
       Card.new(rank, suit)
     end
-    @deck.shuffle!
+    @cards.shuffle!
   end
 
   def deal
-    deck.pop
+    cards.pop
   end
 end
 
@@ -88,6 +102,8 @@ class Game
   attr_reader :player, :dealer, :deck
 
   def initialize
+    @player = Player.new
+    @dealer = Participant.new
     reset
   end
 
@@ -98,6 +114,7 @@ class Game
       player_sequence
       dealer_sequence
       display_result unless player.busted?
+      display_score
       break unless play_again?
     end
     display_goodbye_message
@@ -107,8 +124,9 @@ class Game
 
   def reset
     @deck = Deck.new
-    @player = Player.new
-    @dealer = Participant.new
+    player.hand = []
+    dealer.hand = []
+    player.choice = ''
   end
 
   def clear_screen
@@ -154,37 +172,50 @@ class Game
   end
 
   def player_turn
+    player.choose_hit_or_stay
     player.hand << deck.deal if player.hit?
     clear_screen
     display_initial_hands
-    puts "Busted! Too bad! Dealer wins!" if player.busted?
+    if player.busted?
+      puts "Busted! Too bad! Dealer wins!"
+      dealer.increase_score
+    end
   end
 
   def player_sequence
-    loop do
+    until player.busted? || player.stay?
       player_turn
-      break if player.busted? || player.stay?
     end
   end
 
   def dealer_turn
-    dealer.hand << deck.deal if dealer.total < 17
+    dealer.hand << deck.deal
   end
 
   def dealer_win?
-    dealer.total >= 17 || dealer.total > player.total
+    dealer.total > player.total
+  end
+
+  def dealer_stop_conditions
+    dealer.busted? || dealer_win? || dealer.total > 16
   end
 
   def dealer_sequence
     return if player.busted?
-    dealer_turn until dealer.busted? || dealer_win?
+    dealer_turn until dealer_stop_conditions
+    player.increase_score if dealer.busted?
   end
 
   def determine_winner
     case player.total <=> dealer.total
-    when 1  then puts "You win!"
-    when -1 then puts "Dealer wins!"
-    else         puts "It's a tie!"
+    when 1
+      puts "You win!"
+      player.increase_score
+    when -1
+      puts "Dealer wins!"
+      dealer.increase_score
+    else
+      puts "It's a tie!"
     end
   end
 
@@ -199,9 +230,9 @@ class Game
   def display_dealer_action
     num_of_hits = dealer.hand.size - 2
     case num_of_hits
-    when 0 then puts "The dealer stays."
-    when 1 then puts "The dealer hit 1 time."
-    else        puts "The dealer hit #{num_of_hits} times."
+    when 0 then puts "The dealer stays..."
+    when 1 then puts "The dealer hit 1 time..."
+    else        puts "The dealer hit #{num_of_hits} times..."
     end
   end
 
@@ -214,6 +245,13 @@ class Game
     else
       determine_winner
     end
+  end
+
+  def display_score
+    puts ""
+    puts "  Your score: #{player.score}"
+    puts "Dealer score: #{dealer.score}"
+    puts ""
   end
 
   def play_again?

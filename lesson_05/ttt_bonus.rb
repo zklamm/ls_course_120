@@ -98,9 +98,15 @@ end
 
 class Player
   attr_reader :marker
+  attr_accessor :score
 
   def initialize(marker)
     @marker = marker
+    @score = 0
+  end
+
+  def increase_score
+    self.score += 1
   end
 end
 
@@ -108,6 +114,7 @@ class TTTGame
   HUMAN_MARKER = "X"
   COMPUTER_MARKER = "O"
   FIRST_TO_MOVE = HUMAN_MARKER
+  MAX_SCORE = 5
 
   attr_reader :board, :human, :computer
 
@@ -119,7 +126,7 @@ class TTTGame
   end
 
   def play
-    clear
+    clear_screen
     display_welcome_message
 
     loop do
@@ -132,9 +139,9 @@ class TTTGame
       end
 
       display_result
-      break unless play_again?
+      display_score
+      break unless more_rounds? && play_again?
       reset
-      display_play_again_message
     end
 
     display_goodbye_message
@@ -145,6 +152,9 @@ class TTTGame
   def display_welcome_message
     puts "Welcome to Tic Tac Toe!"
     puts ""
+    puts "Press 'enter' to begin!"
+    gets
+    clear_screen
   end
 
   def display_goodbye_message
@@ -152,7 +162,7 @@ class TTTGame
   end
 
   def clear_screen_and_display_board
-    clear
+    clear_screen
     display_board
   end
 
@@ -179,6 +189,8 @@ class TTTGame
     board[square] = human.marker
   end
 
+
+
   def computer_moves
     board[board.unmarked_keys.sample] = computer.marker
   end
@@ -193,44 +205,50 @@ class TTTGame
     end
   end
 
+  def more_rounds?
+    (human.score < 5) && (computer.score < 5)
+  end
+
   def display_result
     clear_screen_and_display_board
-
     case board.winning_marker
     when human.marker
       puts "You won!"
+      human.increase_score
     when computer.marker
       puts "Computer won!"
+      computer.increase_score
     else
       puts "It's a tie!"
     end
   end
 
+  def display_score
+    puts ""
+    puts "Your score: #{human.score}"
+    puts "Computer score: #{computer.score}"
+    puts ""
+  end
+
   def play_again?
     answer = nil
     loop do
-      puts "Would you like to play again? (y/n)"
+      puts "Play again? (y/n)"
       answer = gets.chomp.downcase
       break if %w[y n].include? answer
       puts "Sorry, must be y or n"
     end
-
     answer == 'y'
   end
 
-  def clear
-    system "clear"
+  def clear_screen
+    (system 'clear') || (system 'cls')
   end
 
   def reset
     board.reset
     @current_marker = FIRST_TO_MOVE
-    clear
-  end
-
-  def display_play_again_message
-    puts "Let's play again!"
-    puts ""
+    clear_screen
   end
 end
 
