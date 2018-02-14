@@ -1,5 +1,3 @@
-require 'pry'
-
 class Participant
   attr_accessor :hand, :score
 
@@ -176,16 +174,11 @@ class Game
     player.hand << deck.deal if player.hit?
     clear_screen
     display_initial_hands
-    if player.busted?
-      puts "Busted! Too bad! Dealer wins!"
-      dealer.increase_score
-    end
+    dealer.increase_score if player.busted?
   end
 
   def player_sequence
-    until player.busted? || player.stay?
-      player_turn
-    end
+    player_turn until player.busted? || player.stay?
   end
 
   def dealer_turn
@@ -201,7 +194,7 @@ class Game
   end
 
   def dealer_sequence
-    return if player.busted?
+    return puts "Busted! Too bad! Dealer wins!" if player.busted?
     dealer_turn until dealer_stop_conditions
     player.increase_score if dealer.busted?
   end
