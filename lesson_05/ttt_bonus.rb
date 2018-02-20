@@ -189,8 +189,6 @@ class TTTGame
     board[square] = human.marker
   end
 
-
-
   def computer_moves
     board[board.unmarked_keys.sample] = computer.marker
   end
