@@ -1,5 +1,3 @@
-require 'pry'
-
 class Square
   INITIAL_MARKER = '  '
 
